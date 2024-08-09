@@ -1,157 +1,139 @@
 import tkinter as tk
 from tkinter import messagebox
 import openpyxl
+from openpyxl.utils import get_column_letter
 
-
-class Book:
+class Book:    
     def __init__(self, title, author, year):
         self.title = title
         self.author = author
         self.year = year
 
-
-class Database:
-    def __init__(self, filename='books.xlsx'):
-        self.filename = filename
-        self.workbook = openpyxl.load_workbook(self.filename) if self.file_exists() else openpyxl.Workbook()
+class BookRepository:    
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.workbook = openpyxl.load_workbook(file_path)
         self.sheet = self.workbook.active
-        self.setup_sheet()
 
-    def file_exists(self):
-        try:
-            open(self.filename, 'r').close()
-            return True
-        except FileNotFoundError:
-            return False
+    def create(self, book):        
+        row = self.sheet.max_row + 1
+        self.sheet.cell(row=row, column=1, value=book.title)
+        self.sheet.cell(row=row, column=2, value=book.author)
+        self.sheet.cell(row=row, column=3, value=book.year)
+        self.workbook.save(self.file_path)
 
-    def setup_sheet(self):
-        if not self.sheet['A1'].value:
-            self.sheet.append(['Title', 'Author', 'Year'])
-            self.workbook.save(self.filename)
-
-    def add_book(self, book):
-        self.sheet.append([book.title, book.author, book.year])
-        self.workbook.save(self.filename)
-
-    def get_books(self):
+    def read(self):       
         books = []
-        for row in self.sheet.iter_rows(min_row=2, values_only=True):
+        for row in self.sheet.iter_rows(values_only=True):
             books.append(Book(*row))
         return books
 
-    def update_book(self, row, book):
-        self.sheet[f'A{row}'] = book.title
-        self.sheet[f'B{row}'] = book.author
-        self.sheet[f'C{row}'] = book.year
-        self.workbook.save(self.filename)
+    def update(self, book):
+        for row in range(1, self.sheet.max_row + 1):
+            if self.sheet.cell(row=row, column=1).value == book.title:
+                self.sheet.cell(row=row, column=2, value=book.author)
+                self.sheet.cell(row=row, column=3, value=book.year)
+                self.workbook.save(self.file_path)
+                return
+        raise ValueError("Book not found")
 
-    def delete_book(self, row):
-        self.sheet.delete_rows(row)
-        self.workbook.save(self.filename)
+def delete(self, title):
+    for row in range(1, self.sheet.max_row + 1):
+        if self.sheet.cell(row=row, column=1).value == title:
+            self.sheet.delete_rows(row)
+            self.workbook.save(self.file_path)
+            return
+    raise ValueError("Book not found")
 
-import tkinter as tk
-from tkinter import messagebox
+class BookController:    
+    def __init__(self, repository):
+        self.repository = repository
 
-class MainApp:
-    def __init__(self, root, db):
-        self.root = root
-        self.db = db
-        self.root.title("Gerenciador de Livros")
-
-        self.book_listbox = tk.Listbox(root, width=50, height=15)
-        self.book_listbox.pack()
-
-        self.add_button = tk.Button(root, text="Adicionar Livro", command=self.open_add_book_window)
-        self.add_button.pack()
-
-        self.edit_button = tk.Button(root, text="Editar Livro", command=self.open_edit_book_window)
-        self.edit_button.pack()
-
-        self.delete_button = tk.Button(root, text="Remover Livro", command=self.delete_book)
-        self.delete_button.pack()
-
-        self.load_books()
-
-    def load_books(self):
-        self.book_listbox.delete(0, tk.END)
-        books = self.db.get_books()
-        for idx, book in enumerate(books, start=2):
-            self.book_listbox.insert(tk.END, f"{idx - 1} - {book.title} - {book.author} - {book.year}")
-
-    def open_add_book_window(self):
-        self.new_window = tk.Toplevel(self.root)
-        self.app = AddEditBookWindow(self.new_window, self.db, self)
-
-    def open_edit_book_window(self):
-        selected_book = self.book_listbox.curselection()
-        if selected_book:
-            row = selected_book[0] + 2
-            self.new_window = tk.Toplevel(self.root)
-            self.app = AddEditBookWindow(self.new_window, self.db, self, row)
-        else:
-            messagebox.showwarning("Seleção Inválida", "Por favor, selecione um livro para editar.")
-
-    def delete_book(self):
-        selected_book = self.book_listbox.curselection()
-        if selected_book:
-            row = selected_book[0] + 2
-            self.db.delete_book(row)
-            self.load_books()
-        else:
-            messagebox.showwarning("Seleção Inválida", "Por favor, selecione um livro para remover.")
-
-class AddEditBookWindow:
-    def __init__(self, root, db, main_app, row=None):
-        self.root = root
-        self.db = db
-        self.main_app = main_app
-        self.row = row
-        self.root.title("Adicionar Livro" if row is None else "Editar Livro")
-
-        self.label_title = tk.Label(root, text="Título:")
-        self.label_title.pack()
-        self.entry_title = tk.Entry(root)
-        self.entry_title.pack()
-
-        self.label_author = tk.Label(root, text="Autor:")
-        self.label_author.pack()
-        self.entry_author = tk.Entry(root)
-        self.entry_author.pack()
-
-        self.label_year = tk.Label(root, text="Ano:")
-        self.label_year.pack()
-        self.entry_year = tk.Entry(root)
-        self.entry_year.pack()
-
-        self.save_button = tk.Button(root, text="Salvar", command=self.save_book)
-        self.save_button.pack()
-
-        if row:
-            self.load_book()
-
-    def load_book(self):
-        book = self.db.get_books()[self.row - 2]
-        self.entry_title.insert(0, book.title)
-        self.entry_author.insert(0, book.author)
-        self.entry_year.insert(0, book.year)
-
-    def save_book(self):
-        title = self.entry_title.get()
-        author = self.entry_author.get()
-        year = self.entry_year.get()
+    def create_book(self, title, author, year):
         book = Book(title, author, year)
+        self.repository.create(book)
 
-        if self.row:
-            self.db.update_book(self.row, book)
-        else:
-            self.db.add_book(book)
+    def read_books(self):        
+         return self.repository.read()
 
-        self.main_app.load_books()
-        self.root.destroy()
+    def update_book(self, title, author, year):
+        book = Book(title, author, year)
+        self.repository.update(book)
+
+    def delete_book(self, title):        
+         self.repository.delete(title)
+
+class BookView:    
+    def __init__(self, master, controller):
+        self.master = master
+        self.controller = controller
+
+        self.title_label = tk.Label(master, text="Title")
+        self.title_label.grid(row=0, column=0)
+
+        self.title_entry = tk.Entry(master)
+        self.title_entry.grid(row=0, column=1)
+
+        self.author_label = tk.Label(master, text="Author")
+        self.author_label.grid(row=1, column=0)
+
+        self.author_entry = tk.Entry(master)
+        self.author_entry.grid(row=1, column=1)
+
+        self.year_label = tk.Label(master, text="Year")
+        self.year_label.grid(row=2, column=0)
+
+        self.year_entry = tk.Entry(master)
+        self.year_entry.grid(row=2, column=1)
+
+        self.create_button = tk.Button(master, text="Create", command=self.create_book)
+        self.create_button.grid(row=3, column=0)
+
+        self.read_button = tk.Button(master, text="Read", command=self.read_books)
+        self.read_button.grid(row=3, column=1)
+
+        self.update_button = tk.Button(master, text="Update", command=self.update_book)
+        self.update_button.grid(row=4, column=0)
+
+        self.delete_button = tk.Button(master, text="Delete", command=self.delete_book)
+        self.delete_button.grid(row=4, column=1)
+
+        self.book_listbox = tk.Listbox(master)
+        self.book_listbox.grid(row=5, column=0, columnspan=2)
+
+    def create_book(self):        
+        title = self.title_entry.get()
+        author = self.author_entry.get()
+        year = self.year_entry.get()
+        self.controller.create_book(title, author, year)
+        self.book_listbox.insert(tk.END, f"{title} by {author} ({year})")
+
+    def read_books(self):        
+        books = self.controller.read_books()
+        self.book_listbox.delete(0, tk.END)
+        for book in books:
+            self.book_listbox.insert(tk.END, f"{book.title} by {book.author} ({book.year})")
+
+    def update_book(self):        
+        title = self.title_entry.get()
+        author = self.author_entry.get()
+        year = self.year_entry.get()
+        self.controller.update_book(title, author, year)
+        self.read_books()
+
+    def delete_book(self):        
+        title = self.title_entry.get()
+        self.controller.delete_book(title)
+        self.read_books()
 
 
 if __name__ == "__main__":
-    db = Database()
+    file_path = "books.xlsx"
     root = tk.Tk()
-    app = MainApp(root, db)
+    root.title("Gerenciador de Livros")
+    root.geometry("300x400")
+    repository = BookRepository(file_path)
+    controller = BookController(repository)
+    BookView(root, controller)
     root.mainloop()
+
