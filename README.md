@@ -1,5 +1,4 @@
 # crud_book
-# crud_book
 C# CRUD de Livros 📚
 
 Este projeto é um sistema simples de CRUD (Create, Read, Update, Delete) de livros. O objetivo é gerenciar uma lista de livros, permitindo adicionar, visualizar, editar e excluir registros.
