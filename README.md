@@ -21,12 +21,12 @@ crud_book/
 ├── book.py                 # Arquivo da aplicação
 └── README.md               # Este arquivo
 
-##Contribuindo 🤝
+## Contribuindo 🤝
 Se você quiser contribuir para este projeto, sinta-se à vontade para fazer um fork do repositório, criar uma nova branch e enviar um pull request.
 
-##Contato 📫
+## Contato 📫
 Para mais informações, você pode me encontrar em LinkedIn ou e-mail.
 
-##Licença 📜
+## Licença 📜
 Este projeto é licenciado sob a MIT License.
 
